@@ -1,0 +1,18 @@
+class World
+
+operations
+    public Scenario1 : () ==> bool
+    Scenario1() == (
+        dcl target_angle : real := 45;
+        dcl ang_vel : real := 5.0;
+
+        MySystem`robot_arm.SetAngularVelocity(ang_vel);
+
+        while MySystem`robot_arm.GetCurrentAngle() <> target_angle do (
+            MySystem`robot_arm.Step(1.0);
+        );
+
+        return true;  
+    );
+
+end World

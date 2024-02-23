@@ -1,0 +1,48 @@
+class Robot_Arm
+
+instance variables
+    q: seq of real := [];   -- Sequence of angles
+    now: seq of real := []; -- Sequence of time points
+    ang_vel: real;          -- angular velocity
+    next_angle: real;       -- Next angle
+
+values
+    r: real = 1;            -- Radius/length
+    M1: real = -10;         -- Angle limit 1  
+    M2: real = 100;         -- Angle limit 2
+
+operations
+    public Robot_Arm: real ==> Robot_Arm
+    Robot_Arm(start_angle) == (
+        q := [start_angle];
+        now := [0];
+        ang_vel := 1;
+        next_angle := start_angle;
+    );
+
+    public SetAngularVelocity: real ==> ()
+    SetAngularVelocity(v) == (
+        ang_vel := v;
+    )
+    post ang_vel = v;
+
+    public GetCurrentAngle: () ==> real
+    GetCurrentAngle() == 
+    (
+        return q(len q);
+    );
+
+    public Step: real ==> ()
+    Step(time_step) == 
+    (
+        dcl current_angle: real := q(len q);
+        dcl step_size: real := ang_vel * time_step;
+        next_angle := current_angle + step_size;
+
+        q := q ^ [next_angle];
+        now := now ^ [now(len now) + time_step];
+    )
+    pre next_angle >= M1 and next_angle <= M2
+    post q(len q) = next_angle and next_angle >= M1 and next_angle <= M2;
+
+end Robot_Arm
