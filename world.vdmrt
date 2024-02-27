@@ -1,18 +1,81 @@
 class World
 
+values
+    target_angle : real = 60;
+    accuracy : real = 0.01; --1% accuracy
+    lower_bound : real = target_angle * (1 - accuracy);
+    upper_bound : real = target_angle * (1 + accuracy);
+
 operations
-    public Scenario1 : () ==> bool
+    public Scenario1 : () ==> bool --Scenario 1: Linear
     Scenario1() == (
-        dcl target_angle : real := 45;
-        dcl ang_vel : real := 5.0;
+        
+        dcl ang_vel : real := 3.3;
+        dcl current_angle : real := MySystem`robot_arm.GetCurrentAngle();
 
         MySystem`robot_arm.SetAngularVelocity(ang_vel);
 
-        while MySystem`robot_arm.GetCurrentAngle() <> target_angle do (
-            MySystem`robot_arm.Step(1.0);
+        while (current_angle < lower_bound) or (current_angle > upper_bound) do (
+            MySystem`robot_arm.Step(0.4);
+            current_angle := MySystem`robot_arm.GetCurrentAngle();
         );
 
         return true;  
+    );
+
+    public Scenario2 : () ==> bool --Scenario 2: Exponential decay towards a target angle
+    Scenario2() == (
+        dcl current_angle : real := MySystem`robot_arm.GetCurrentAngle();
+
+        while (current_angle < lower_bound) or (current_angle > upper_bound) do (
+            dcl distance_to_target : real := target_angle - current_angle;
+            dcl new_velocity : real := distance_to_target * 0.25;
+            MySystem`robot_arm.SetAngularVelocity(new_velocity);
+            MySystem`robot_arm.Step(1);
+            current_angle := MySystem`robot_arm.GetCurrentAngle();
+        );
+
+        return true;
+    );
+
+    public Scenario3 : () ==> bool --Scenario 3: Damped Oscillations with Overshoot
+    Scenario3() == (
+        dcl current_angle : real := MySystem`robot_arm.GetCurrentAngle();
+        dcl ang_vel : real := 5.1; 
+        dcl damping_factor : real := 0.85; 
+        while not (current_angle >= lower_bound and current_angle <= upper_bound) do (
+
+            -- Check if the arm has overshot the target angle
+            if (current_angle > target_angle and ang_vel > 0) or (current_angle < target_angle and ang_vel < 0) then (
+                ang_vel := -ang_vel * damping_factor;
+            );
+
+            MySystem`robot_arm.SetAngularVelocity(ang_vel);
+            MySystem`robot_arm.Step(1.1); 
+            current_angle := MySystem`robot_arm.GetCurrentAngle();
+        );
+
+        return true  
+    );
+
+    public Scenario4 : () ==> bool --Scenario: Unstable System with Overcompensation
+    Scenario4() == (
+        dcl hard_limit : real := 30.0;
+        dcl current_angle : real := MySystem`robot_arm.GetCurrentAngle();
+        dcl ang_vel : real := 5.0; 
+        dcl amplification_factor : real := 1.1; -- Amplification factor for positive feedback loop
+
+        while abs(ang_vel) < hard_limit  do (
+
+            if (current_angle > target_angle and ang_vel > 0) or (current_angle < target_angle and ang_vel < 0) then (
+                ang_vel := ang_vel * amplification_factor; 
+            );
+
+            MySystem`robot_arm.SetAngularVelocity(ang_vel);
+            MySystem`robot_arm.Step(0.4); 
+            current_angle := MySystem`robot_arm.GetCurrentAngle();
+        );
+        return true;
     );
 
 end World
