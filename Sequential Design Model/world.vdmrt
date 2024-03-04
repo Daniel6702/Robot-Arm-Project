@@ -1,0 +1,15 @@
+class World_2
+
+values
+    target_angle : real = 60;
+    accuracy : real = 0.005; 
+    lower_bound : real = target_angle * (1 - accuracy);
+    upper_bound : real = target_angle * (1 + accuracy);
+
+operations
+    public Scenario1 : () ==> bool
+    Scenario1() == (
+        return true;
+    );
+    
+end World_2
