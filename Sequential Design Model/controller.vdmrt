@@ -1,0 +1,40 @@
+class Robot_Arm_Controller
+
+instance variables
+    public ctl_angle: real;
+    ctl_ang_vel: real; 
+    ctl_motor_state: real;
+
+operations
+    public Robot_Arm_Controller: real ==> Robot_Arm_Controller
+    Robot_Arm_Controller(start_angle) == (
+        ctl_angle := start_angle;
+        ctl_ang_vel := 0;
+        ctl_motor_state := 0;
+    );
+
+    public SetAngularVelocity: real ==> ()
+    SetAngularVelocity(v) == (
+        ctl_ang_vel := v;
+        MySystem`robot_arm.env_ang_vel := v;
+    )
+    post ctl_ang_vel = v;
+
+    public MonitorCurrentAngle: () ==> ()
+    MonitorCurrentAngle() == (
+        ctl_angle := MySystem`robot_arm.env_angle;
+    );
+
+    public MotorOn: () ==> ()
+    MotorOn() == (
+        ctl_motor_state := 1;
+        MySystem`robot_arm.env_motor_state := 1;
+    );
+
+    public MotorOff: () ==> ()
+    MotorOff() == (
+        ctl_motor_state := 0;
+        MySystem`robot_arm.env_motor_state := 0;
+    );
+
+end Robot_Arm_Controller

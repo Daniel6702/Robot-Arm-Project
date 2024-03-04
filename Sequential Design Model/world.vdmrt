@@ -1,4 +1,7 @@
-class World_2
+class World
+
+instance variables
+    io : IO := new IO();
 
 values
     target_angle : real = 60;
@@ -7,9 +10,45 @@ values
     upper_bound : real = target_angle * (1 + accuracy);
 
 operations
+
+    public echoHeader: () ==> ()
+    echoHeader() == (
+        dcl str : seq of char := "Counter - Time - Angle - Angular Velocity - Motor State\n";
+        def - = io.echo(str) in skip;
+    );
+
+    public echoState: (nat) ==> ()
+    echoState(counter) == (
+        dcl str : seq of char := "";
+        str := str ^ VDMUtil`val2seq_of_char[nat](counter);
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](MySystem`robot_arm.env_time);
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](MySystem`robot_arm.env_angle);
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](MySystem`robot_arm.env_ang_vel);
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](MySystem`robot_arm.env_motor_state);
+        str := str ^ "\n";
+        def - = io.echo(str) in skip;
+    );
+
     public Scenario1 : () ==> bool
     Scenario1() == (
+        dcl temp : nat := 0;
+        echoHeader();
+        MySystem`controller.MotorOn();
+        MySystem`controller.SetAngularVelocity(1.0);
+        while (temp < 10) 
+        do (
+            MySystem`robot_arm.Step(1.0);
+            MySystem`controller.MonitorCurrentAngle();
+            temp := temp + 1;
+            echoState(temp);
+        );
         return true;
     );
+
+
     
-end World_2
+end World

@@ -1,0 +1,33 @@
+class Robot_Arm
+
+instance variables
+    public env_angle: real;     -- current angle
+    public env_time: real;      -- current time
+    public env_ang_vel: real;   -- angular velocity
+    public env_motor_state: nat;-- motor state
+    
+values
+    R: real = 1;            -- Radius/length
+    M1: real = -10;         -- Angle limit 1  
+    M2: real = 100;         -- Angle limit 2
+
+operations
+    public Robot_Arm: real ==> Robot_Arm
+    Robot_Arm(start_angle) == (
+        env_angle := start_angle;
+        env_time := 0;
+        env_ang_vel := 0;
+        env_motor_state := 0;
+    );
+
+    public Step: real ==> ()
+    Step(time_step) == 
+    (
+        dcl step_size: real := env_ang_vel * time_step * env_motor_state;
+        env_angle := env_angle + step_size;
+        env_time := env_time + time_step;
+    )
+    pre env_angle >= M1 and env_angle <= M2
+    post env_angle >= M1 and env_angle <= M2;
+
+end Robot_Arm
