@@ -1,0 +1,185 @@
+class World
+
+instance variables
+    io : IO := new IO();
+
+values
+    target_angle : real = 60;
+    accuracy : real = 0.005; 
+    lower_bound : real = target_angle * (1 - accuracy);
+    upper_bound : real = target_angle * (1 + accuracy);
+
+operations
+
+    public echoHeader: () ==> ()
+    echoHeader() == (
+        dcl str : seq of char := "Counter - Time - Angle - Angular Velocity - Motor State\n";
+        def - = io.echo(str) in skip;
+    );
+
+    public round: real ==> real
+    round(r) == (
+        dcl scaled: real := r * 100;
+        dcl rounded: real := floor(scaled + 0.5);
+        return rounded / 100;
+    );
+
+
+    public echoState: (nat) ==> ()
+    echoState(counter) == (
+        dcl str : seq of char := "";
+        str := str ^ VDMUtil`val2seq_of_char[nat](counter);
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](round(MySystem`robot_arm.env_time));
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](round(MySystem`robot_arm.env_angle));
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](round(MySystem`robot_arm.env_ang_vel));
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](round(MySystem`robot_arm.env_motor_state));
+        str := str ^ "\n";
+        def - = io.echo(str) in skip;
+    );
+
+
+    public ScenarioTEST : () ==> bool
+    ScenarioTEST() == (
+        dcl temp : nat := 0;
+        echoHeader();
+        MySystem`controller.MotorOn();
+        MySystem`controller.SetAngularVelocity(1.0);
+        while (temp < 10) 
+        do (
+            MySystem`robot_arm.Step(1.0);
+            MySystem`controller.MonitorCurrentAngle();
+            temp := temp + 1;
+            echoState(temp);
+        );
+        return true;
+    );
+
+    public Scenario1 : () ==> bool --Scenario 1: Linear
+    Scenario1() == (
+        dcl ang_vel : real := 5.0;
+        dcl current_angle : real := MySystem`start_angle;
+        dcl counter: nat := 0;
+
+        echoHeader();
+        echoState(counter);
+
+        MySystem`controller.MotorOn();
+        MySystem`controller.SetAngularVelocity(ang_vel);
+
+        while (current_angle < lower_bound) or (current_angle > upper_bound) do (
+            MySystem`robot_arm.Step(1);
+            MySystem`controller.MonitorCurrentAngle();
+            current_angle := MySystem`controller.ctl_angle;
+            echoState(counter);
+            counter := counter + 1;
+        );
+
+        return true;  
+    );
+
+    public Scenario2 : () ==> bool --Scenario 2: Exponential decay towards a target angle
+    Scenario2() == (
+        dcl current_angle : real := MySystem`start_angle;
+        dcl counter: nat := 0;
+
+        echoHeader();
+        echoState(counter);
+        
+        MySystem`controller.MotorOn();
+
+        while (current_angle < lower_bound) or (current_angle > upper_bound) do (
+            dcl distance_to_target : real := target_angle - current_angle;
+            dcl new_velocity : real := distance_to_target * 0.35;
+            MySystem`controller.SetAngularVelocity(new_velocity);
+            MySystem`robot_arm.Step(1);
+            MySystem`controller.MonitorCurrentAngle();
+            current_angle := MySystem`controller.ctl_angle;
+            echoState(counter);
+            counter := counter + 1;
+        );
+
+        return true;  
+    );
+
+    public Scenario3 : () ==> bool --Scenario 3: Damped Oscillations with Overshoot
+    Scenario3() == (
+        dcl current_angle : real := MySystem`controller.ctl_angle;
+        dcl ang_vel : real := 0;
+        dcl damping_factor : real := 0.85;
+        dcl M : real := 5;
+        dcl counter: nat := 0;
+
+        echoHeader();
+        echoState(counter);
+        
+        MySystem`controller.MotorOn();
+
+        while not (current_angle >= lower_bound and current_angle <= upper_bound) do (
+            -- Check if the arm has overshot the target angle
+            if (current_angle > target_angle and ang_vel > -M) then (
+                ang_vel := ang_vel - (current_angle - target_angle) * damping_factor;
+            );
+
+            if (current_angle < target_angle and ang_vel < M) then (
+                ang_vel := ang_vel + (target_angle - current_angle) * damping_factor;
+            );
+
+            MySystem`controller.SetAngularVelocity(ang_vel);
+            MySystem`robot_arm.Step(0.2);
+            MySystem`controller.MonitorCurrentAngle();
+            current_angle := MySystem`controller.ctl_angle;
+            echoState(counter);
+            counter := counter + 1;
+        );
+
+        return true  
+    );
+
+    public Scenario4 : () ==> bool --Scenario 4: Overcorrection leading to Positive Feedback Loop
+    Scenario4() == (
+        dcl current_angle : real := MySystem`controller.ctl_angle;
+        dcl ang_vel : real := 0;
+        dcl overcorrection_factor : real := 1.05; -- This factor determines the rate of overcorrection
+        dcl counter: nat := 0;
+
+        echoHeader();
+        echoState(counter);
+        
+        MySystem`controller.MotorOn();
+
+        while not (current_angle >= lower_bound and current_angle <= upper_bound) do (
+            -- Increasing velocity in response to deviation from the target angle
+            if (current_angle > target_angle) then (
+                ang_vel := ang_vel - (current_angle - target_angle) * 0.1 * overcorrection_factor;
+            ) elseif (current_angle < target_angle) then (
+                ang_vel := ang_vel + (target_angle - current_angle) * 0.1 * overcorrection_factor;
+            );
+
+            MySystem`controller.SetAngularVelocity(ang_vel);
+            MySystem`robot_arm.Step(1.0);
+            MySystem`controller.MonitorCurrentAngle();
+            current_angle := MySystem`controller.ctl_angle;
+            echoState(counter);
+            counter := counter + 1;
+
+            -- Optional: Limit to prevent endless execution
+            if (counter > 16) then (
+                return false; -- or handle the situation appropriately
+            );
+        );
+
+        return true;
+    );
+
+
+
+
+
+
+
+    
+end World

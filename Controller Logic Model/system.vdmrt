@@ -1,0 +1,9 @@
+system MySystem    
+
+instance variables
+    public static start_angle : real := 0;
+
+    public static robot_arm:Robot_Arm := new Robot_Arm(start_angle);
+    public static controller:Robot_Arm_Controller := new Robot_Arm_Controller(start_angle);
+
+end MySystem
