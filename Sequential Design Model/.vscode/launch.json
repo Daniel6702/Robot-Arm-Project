@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "name": "Lens config: Debug World`Scenario4",
+            "type": "vdm",
+            "request": "launch",
+            "noDebug": false,
+            "defaultName": "World",
+            "command": "p new World().Scenario4()"
+        }
+    ]
+}
