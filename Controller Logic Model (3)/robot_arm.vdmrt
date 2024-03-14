@@ -8,8 +8,10 @@ instance variables
     
 values
     R: real = 1;            -- Radius/length
-    M1: real = -10;         -- Angle limit 1  
-    M2: real = 100;         -- Angle limit 2
+    public M1: real = -10;       -- Angle limit 1  
+    public M2: real = 100;       -- Angle limit 2
+    public N1: real = 50;         -- Safe Angle limit 1  
+    public N2: real = 60;        -- Safe Angle limit 2
 
 operations
     public Robot_Arm: real ==> Robot_Arm

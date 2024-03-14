@@ -13,6 +13,24 @@ operations
         ctl_motor_state := 0;
     );
 
+    -- Controller Logic --
+    public EnsureRobotArmSafety: () ==> ()
+    EnsureRobotArmSafety() == (
+        dcl ang_vel: real := ctl_ang_vel;
+        if (ctl_angle < MySystem`robot_arm.N1) then (
+            MotorOn(); 
+            ang_vel := abs(ang_vel);
+        ) else if (ctl_angle > MySystem`robot_arm.N2) then (
+            MotorOn();
+            ang_vel := -abs(ang_vel);
+        ) else (
+            MotorOff();
+            ang_vel := 0;
+        );
+        SetAngularVelocity(ang_vel);
+    );
+    ----------------------
+
     public SetAngularVelocity: real ==> ()
     SetAngularVelocity(v) == (
         ctl_ang_vel := v;
