@@ -1,0 +1,21 @@
+{
+    "version":"0.2.0",
+    "configurations": [
+        {
+            "name": "TESTTEST",
+            "type": "vdm",
+            "request": "launch",
+            "noDebug": false,
+            "defaultName": "World",
+            "command": "print new World().test()"
+        },
+        {
+            "name": "Lens config: Debug World`Scenario4",
+            "type": "vdm",
+            "request": "launch",
+            "noDebug": false,
+            "defaultName": "World",
+            "command": "p new World().Scenario4()"
+        }
+    ]
+}
