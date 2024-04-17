@@ -1,0 +1,22 @@
+system MySystem    
+
+instance variables
+    public static start_angle : real := 0;
+    public static target_angle : real := 35;
+
+    public static robot_arm : Robot_Arm := new Robot_Arm(start_angle);
+    public static controller : Robot_Arm_Controller := new Robot_Arm_Controller(start_angle, target_angle);
+
+    cpu1: CPU := new CPU(<FCFS>, 1E9);
+    cpu2: CPU := new CPU(<FCFS>, 1E9);
+
+    bus1 : BUS := new BUS(<FCFS>, 1E100, {cpu1, cpu2});
+
+operations
+    public MySystem: () ==> MySystem
+    MySystem() == (
+        cpu1.deploy(robot_arm);
+        cpu2.deploy(controller);
+    );
+
+end MySystem

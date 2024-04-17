@@ -1,0 +1,182 @@
+class World
+
+instance variables
+    io : IO := new IO();
+    current_time : real := 0;
+
+values
+    target_angle : real = 55;
+    accuracy : real = 0.001; 
+    lower_bound : real = target_angle * (1 - accuracy);
+    upper_bound : real = target_angle * (1 + accuracy);
+
+operations
+    public UpdateTimeStamp : () ==> ()
+    UpdateTimeStamp() == duration(0) (
+        current_time := time / 1E9;
+        echoState();
+    );
+
+    public echoHeader: () ==> ()
+    echoHeader() == (
+        dcl str : seq of char := "Current Time - Angle - Angular Velocity - Motor State\n";
+        def - = io.echo(str) in skip;
+    );
+
+    public round: real ==> real
+    round(r) == (
+        dcl scaled: real := r * 1000;
+        dcl rounded: real := floor(scaled + 0.5);
+        return rounded / 1000;
+    );
+
+    public echoState: () ==> ()
+    echoState() == (
+        dcl str : seq of char := "";
+        str := str ^ VDMUtil`val2seq_of_char[real](round(current_time));
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](round(MySystem`robot_arm.env_angle));
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[real](round(MySystem`robot_arm.env_ang_vel));
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[<On> | <Off>](MySystem`robot_arm.env_motor_state);
+        str := str ^ "\n";
+        def - = io.echo(str) in skip;
+    );
+
+    public Scenario0 : () ==> bool  --PID Test Scenario
+    Scenario0() == (
+        echoHeader();
+        UpdateTimeStamp();
+        MySystem`controller.Set_Motor_State(<On>);
+        MySystem`controller.Set_Target_Angle(35);
+
+        while (abs(MySystem`controller.Get_Last_Error()) > 0.25) do (
+            UpdateTimeStamp();
+            MySystem`controller.MonitorCurrentAngle();
+            MySystem`controller.MoveTowardsTargetAngle();
+            MySystem`robot_arm.Step();  
+        );
+        return true;
+    );
+
+    public Scenario1 : () ==> bool  --Simple Test Scenario
+    Scenario1() == (
+        dcl ang_vel : real := 5;
+        echoHeader();
+        UpdateTimeStamp();
+        MySystem`controller.Set_Motor_State(<On>);
+        MySystem`robot_arm.Step();        
+
+        UpdateTimeStamp();
+        MySystem`controller.SetAngularVelocity(ang_vel);
+        MySystem`robot_arm.Step();
+
+        UpdateTimeStamp();
+        MySystem`controller.MonitorCurrentAngle();
+        MySystem`robot_arm.Step();        
+
+        UpdateTimeStamp();
+        MySystem`controller.EnsureRobotArmSafety();
+        MySystem`robot_arm.Step();  
+
+        UpdateTimeStamp();
+        duration(5E9) skip;
+        MySystem`robot_arm.Step();  
+
+        UpdateTimeStamp();
+        MySystem`controller.MonitorCurrentAngle();
+        MySystem`robot_arm.Step();  
+
+        UpdateTimeStamp();
+        MySystem`controller.EnsureRobotArmSafety();
+        MySystem`robot_arm.Step();  
+
+        return true;
+    );
+
+    public Scenario2 : () ==> bool  --Linear increase to target angle
+    Scenario2() == (
+        dcl ang_vel : real := 10;
+        echoHeader();
+        UpdateTimeStamp();
+        MySystem`controller.Set_Motor_State(<On>);
+        MySystem`robot_arm.Step();        
+
+        UpdateTimeStamp();
+        MySystem`controller.SetAngularVelocity(ang_vel);
+        MySystem`robot_arm.Step();
+
+        while (MySystem`controller.Get_Angle() < lower_bound) or (MySystem`controller.Get_Angle() > upper_bound) do (
+            UpdateTimeStamp();
+            MySystem`controller.MonitorCurrentAngle();
+            MySystem`robot_arm.Step();  
+        );
+
+        return true;
+    );
+
+    public Scenario3 : () ==> bool  --Example use of Controller logic 'EnsureRobotArmSafety'
+    Scenario3() == (
+        dcl ang_vel : real := 10;
+        echoHeader();
+        UpdateTimeStamp();      
+
+        MySystem`controller.SetAngularVelocity(ang_vel);
+        MySystem`robot_arm.Step();
+
+        UpdateTimeStamp();
+        MySystem`controller.EnsureRobotArmSafety();
+        MySystem`robot_arm.Step();
+
+        UpdateTimeStamp();
+        duration(6E9) skip;
+        MySystem`robot_arm.Step();
+
+        UpdateTimeStamp();
+        MySystem`controller.MonitorCurrentAngle();
+        MySystem`controller.EnsureRobotArmSafety();
+        MySystem`robot_arm.Step();
+
+        UpdateTimeStamp();
+        duration(2E9) skip;
+        MySystem`robot_arm.Step();
+
+        UpdateTimeStamp();
+        MySystem`controller.MonitorCurrentAngle();
+        MySystem`controller.EnsureRobotArmSafety();
+        MySystem`robot_arm.Step();
+
+        duration(3E9) skip;
+
+        MySystem`controller.MonitorCurrentAngle();
+        MySystem`controller.EnsureRobotArmSafety();
+        UpdateTimeStamp();
+        return true;
+    );
+
+    public Scenario4 : () ==> bool  --Exponential decay towards a target angle
+    Scenario4() == (
+        dcl ang_vel : real := 4;
+        echoHeader();
+        UpdateTimeStamp();
+        MySystem`controller.Set_Motor_State(<On>);
+        MySystem`robot_arm.Step();        
+
+        UpdateTimeStamp();
+        MySystem`controller.SetAngularVelocity(ang_vel);
+        MySystem`robot_arm.Step();
+
+        while (MySystem`controller.Get_Angle() < lower_bound) or (MySystem`controller.Get_Angle() > upper_bound) do (
+            dcl distance_to_target : real := target_angle - MySystem`controller.Get_Angle();
+            dcl new_velocity : real := distance_to_target * 0.35;
+            UpdateTimeStamp();
+            MySystem`controller.SetAngularVelocity(new_velocity);
+            MySystem`controller.MonitorCurrentAngle();
+            MySystem`robot_arm.Step();  
+        );
+
+        return true;
+    );
+
+end World
