@@ -3,7 +3,7 @@ class Motor
 instance variables
     motor_state: <On> | <Off>;
     last_time: real;
-    torque: real;
+    motor_torque: real;
     math : MATH := new MATH();
 
 values
@@ -14,7 +14,7 @@ operations
     Motor() == (
         motor_state := <Off>;
         last_time := 0;
-        torque := 0;
+        motor_torque := 0;
     );
 
     public SetMotorState: (<On> | <Off>) ==> ()
@@ -27,38 +27,53 @@ operations
     SetTorque(torque_) == duration(5E8) (
         if abs(torque_) > MAX_TORQUE then (
             if (torque_ > 0) then (
-                torque := MAX_TORQUE;
+                motor_torque := MAX_TORQUE;
             ) else (
-                torque := -MAX_TORQUE;
+                motor_torque := -MAX_TORQUE;
             )
         ) else (
-            torque := torque_;
+            motor_torque := torque_;
         )
     );
 
     public GetTorque: () ==> real
-    GetTorque() == duration(1E8) return torque;
+    GetTorque() == duration(1E8) return motor_torque;
 
     public Step: () ==> ()
     Step() == duration(0)
     (   
+        -- Calculate the time since the last step
         dcl t : real := time / 1E9; 
         dcl delta : real := (t - last_time); 
-        dcl ang : real := MySystem`controller.Get_Current_Angle();
+
+        -- Retrieve constants from environment
         dcl mass : real := MySystem`robot_arm.Get_Mass();
         dcl length : real := MySystem`robot_arm.Get_Length();
-        dcl angular_vel : real := MySystem`controller.Get_Current_Ang_Vel();
+        dcl friction: real := MySystem`robot_arm.Get_friction();
         dcl g : real := MySystem`robot_arm.Get_G();
-        dcl frictional_torque : real := -MySystem`robot_arm.Get_friction() * angular_vel;
+
+        -- Retrieve current state of the robot arm from controller
+        dcl ang : real := MySystem`controller.Get_Current_Angle();
+        dcl angular_vel : real := MySystem`controller.Get_Current_Ang_Vel();
+
+        -- Calculate the net torque
+        dcl frictional_torque : real := friction * angular_vel;
         dcl gravity_torque : real := mass * g * length * math.cos(ang*math.pi/180);
-        dcl net_torque : real := frictional_torque + gravity_torque + torque;
+        dcl net_torque : real := motor_torque - frictional_torque - gravity_torque;
+
+        -- Calculate the angular acceleration from the net torque
         dcl angular_acc : real := net_torque / MySystem`robot_arm.Get_I();
+
+        -- Apply the angular acceleration to the angular velocity
         dcl new_angular_vel : real := angular_vel + angular_acc;
+
+        -- Update the angle of the robot arm
         dcl angle_step : real := 0;
         dcl state_val : nat := 0;
         if motor_state = <On> then state_val := 1;
         angle_step := new_angular_vel * delta * state_val;
         MySystem`robot_arm.Adjust_Angle(angle_step);
+        last_time := t;
     )
 
 --thread

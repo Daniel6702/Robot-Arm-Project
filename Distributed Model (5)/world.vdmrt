@@ -44,11 +44,6 @@ operations
         def - = io.echo(str) in skip;
     );
 
-    public Scenario1 : () ==> bool
-    Scenario1() == (
-        return true;
-    );
-
     public Scenario0 : () ==> bool  --PID Test Scenario
     Scenario0() == (
         echoHeader();
@@ -56,7 +51,7 @@ operations
         MySystem`controller.Set_Motor_State(<On>);
         MySystem`controller.Set_Target_Angle(35);
 
-        while (abs(MySystem`controller.Get_Last_Error()) > 0.25) do (
+        while (abs(MySystem`controller.Get_Last_Error()) > 0.2) do (
             UpdateTimeStamp();
             MySystem`controller.MonitorCurrentAngle();
             MySystem`controller.MonitorCurrentAngVel();
@@ -65,6 +60,39 @@ operations
             MySystem`joint.Step();
         );
         return true;
+    );
+
+    public Scenario1 : () ==> bool  -- Quick Change Response Test
+    Scenario1() == (
+        dcl reachedFirstTarget : bool := false;
+        echoHeader();
+        UpdateTimeStamp();
+        MySystem`controller.Set_Motor_State(<On>);
+
+        -- Initial target angle
+        MySystem`controller.Set_Target_Angle(35);
+
+        while (true) do (
+            UpdateTimeStamp();
+
+            -- Check if first target is reached
+            if not reachedFirstTarget and abs(MySystem`controller.Get_Last_Error()) < 0.2 then (
+                reachedFirstTarget := true;
+                -- Change to a new target angle suddenly
+                MySystem`controller.Set_Target_Angle(-35); -- Opposite direction to test responsiveness
+            );
+
+            MySystem`controller.MonitorCurrentAngle();
+            MySystem`controller.MonitorCurrentAngVel();
+            MySystem`controller.MoveTowardsTargetAngle();
+            MySystem`motor.Step();
+            MySystem`joint.Step();
+
+            -- Break loop if second target is reached
+            if reachedFirstTarget and abs(MySystem`controller.Get_Last_Error()) < 0.2 then (
+                return true;
+            );
+        );
     );
 
 end World

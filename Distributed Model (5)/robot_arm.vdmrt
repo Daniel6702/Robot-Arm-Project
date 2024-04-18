@@ -16,7 +16,7 @@ values
     public N1: real = 50;         -- Safe Angle limit 1  
     public N2: real = 60;        -- Safe Angle limit 2
     public r: real = 1;
-    public m: real = 0; 
+    public m: real = 0.1; 
 
 operations
     public Robot_Arm: real ==> Robot_Arm
@@ -72,7 +72,7 @@ operations
     Get_Mass() == duration(1E8) return m;
 
     public Get_G: () ==> real
-    Get_G() == duration(1E8) return 0;
+    Get_G() == duration(1E8) return 9.81;
 
     public Get_I: () ==> real
     Get_I() == duration(1E8) return 1;
