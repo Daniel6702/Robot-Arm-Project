@@ -4,6 +4,7 @@ instance variables
     public env_angle: real;     -- current angle
     public env_time: real;      -- current time
     public env_ang_vel: real;   -- angular velocity
+    public env_ang_acc: real;   -- angular acceleration
     public env_motor_state: <On> | <Off>;   -- motor state
     public state_history : seq of (real * real * <On> | <Off>); -- history of states
     public last_time: real := 0; -- last time step
@@ -14,6 +15,8 @@ values
     public M2: real = 100;       -- Angle limit 2
     public N1: real = 50;         -- Safe Angle limit 1  
     public N2: real = 60;        -- Safe Angle limit 2
+    public r: real = 1;
+    public m: real = 0; 
 
 operations
     public Robot_Arm: real ==> Robot_Arm
@@ -21,6 +24,7 @@ operations
         env_angle := start_angle;
         env_time := 0;
         env_ang_vel := 0;
+        env_ang_acc := 0;
         env_motor_state := <Off>;
         state_history := [];
         last_time := 0;
@@ -36,6 +40,9 @@ operations
 
     public Get_Ang_Vel: () ==> real
     Get_Ang_Vel() == duration(1E8) return env_ang_vel;
+
+    public Get_Ang_Acc: () ==> real
+    Get_Ang_Acc() == duration(1E8) return env_ang_acc;
 
     public Get_Motor_State: () ==> <On> | <Off>
     Get_Motor_State() == duration(1E8) return env_motor_state;
@@ -55,23 +62,22 @@ operations
     public Get_N2: () ==> real
     Get_N2() == duration(1E8) return N2;
 
-    public Step: () ==> ()
-    Step() == duration(0)
-    (   
-        dcl t : real := time / 1E9; --current time in seconds
-        dcl delta : real := (t - last_time); -- Compute the time elapsed since the last step
-        dcl state_val : nat := 0;
-        dcl step_size: real := 0;
+    public Adjust_Angle: real ==> ()
+    Adjust_Angle(angle) == duration(5E8) env_angle := env_angle + angle;
 
-        last_time := t; -- Update the last_time to the current time for the next iteration
+    public Get_Length: () ==> real
+    Get_Length() == duration(1E8) return r;
 
-        if env_motor_state = <On> then state_val := 1;
-        step_size := env_ang_vel * delta * state_val;
+    public Get_Mass: () ==> real
+    Get_Mass() == duration(1E8) return m;
 
-        env_angle := env_angle + step_size;
+    public Get_G: () ==> real
+    Get_G() == duration(1E8) return 0;
 
-    )
-    pre env_angle >= M1 and env_angle <= M2
-    post env_angle >= M1 and env_angle <= M2;
+    public Get_I: () ==> real
+    Get_I() == duration(1E8) return 1;
+
+    public Get_friction: () ==> real
+    Get_friction() == duration(1E8) return 0.1;
 
 end Robot_Arm

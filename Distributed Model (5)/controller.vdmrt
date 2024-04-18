@@ -6,9 +6,9 @@ instance variables
     ctl_ang_vel: real; 
     ctl_motor_state: <On> | <Off>;
 
-    Kp: real := 1.0;  -- Proportional gain coefficient
-    Ki: real := 0.1;  -- Integral gain coefficient
-    Kd: real := 0.05; -- Derivative gain coefficient
+    Kp: real := 0.05;  -- Proportional gain coefficient
+    Ki: real := 0.01;  -- Integral gain coefficient
+    Kd: real := 0.05;  -- Derivative gain coefficient
     integral: real := 0;
     last_error: real;
 
@@ -22,23 +22,6 @@ operations
         last_error := start_angle - target_angle_;
     );
 
-    -- Controller Logic --
-    public EnsureRobotArmSafety: () ==> ()
-    EnsureRobotArmSafety() == duration(1E8) (
-        dcl ang_vel: real := ctl_ang_vel;
-        if (ctl_angle < MySystem`robot_arm.Get_N1()) then (
-            MotorOn(); 
-            ang_vel := abs(ang_vel);
-        ) else if (ctl_angle > MySystem`robot_arm.Get_N2()) then (
-            MotorOn();
-            ang_vel := -abs(ang_vel);
-        ) else (
-            MotorOff();
-            ang_vel := 0;
-        );
-        SetAngularVelocity(ang_vel);
-    );
-
     public MoveTowardsTargetAngle: () ==> ()  -- PID Controller --
     MoveTowardsTargetAngle() == duration(1E8) (
         dcl err: real := target_angle - ctl_angle;
@@ -46,54 +29,44 @@ operations
         dcl output: real;
         integral := integral + err;
         output := (Kp * err) + (Ki * integral) + (Kd * derivative);
-        SetAngularVelocity(output);
+        MySystem`motor.SetTorque(output);
         last_error := err;
     );
-    ----------------------
 
     public Get_Last_Error: () ==> real
-    Get_Last_Error() == (
+    Get_Last_Error() == duration(1E8) (
         return last_error;
     );
 
     public Set_Target_Angle: real ==> ()
-    Set_Target_Angle(a) == (
+    Set_Target_Angle(a) == duration(1E8) (
         target_angle := a;
     );
 
     public Set_Motor_State: <On> | <Off> ==> ()
-    Set_Motor_State(s) == (
+    Set_Motor_State(s) == duration(1E8) (
         ctl_motor_state := s;
-        MySystem`robot_arm.Set_Motor_State(s);
+        MySystem`motor.SetMotorState(s);
     );
-
-    public SetAngularVelocity: real ==> ()
-    SetAngularVelocity(v) == duration(5E8) (
-        ctl_ang_vel := v;
-        MySystem`robot_arm.Set_Ang_Vel(v);
-    )
-    post ctl_ang_vel = v;
 
     public MonitorCurrentAngle: () ==> ()
     MonitorCurrentAngle() == duration(1E8) (
-        ctl_angle := MySystem`robot_arm.Get_Angle();
+        ctl_angle := MySystem`joint.Get_Angle();
     );
 
-    public Get_Angle: () ==> real
-    Get_Angle() == (
+    public MonitorCurrentAngVel: () ==> ()
+    MonitorCurrentAngVel() == duration(1E8) (
+        ctl_ang_vel := MySystem`joint.Get_Ang_Vel();
+    );
+
+    public Get_Current_Angle: () ==> real
+    Get_Current_Angle() == duration(1E8) (
         return ctl_angle;
     );
 
-    public MotorOn: () ==> ()
-    MotorOn() == duration(10E8) (
-        ctl_motor_state := <On>;
-        MySystem`robot_arm.Set_Motor_State(<On>);
-    );
-
-    public MotorOff: () ==> ()
-    MotorOff() == duration(10E8) (
-        ctl_motor_state := <Off>;
-        MySystem`robot_arm.Set_Motor_State(<Off>);
+    public Get_Current_Ang_Vel: () ==> real
+    Get_Current_Ang_Vel() == duration(1E8) (
+        return ctl_ang_vel;
     );
 
 end Robot_Arm_Controller

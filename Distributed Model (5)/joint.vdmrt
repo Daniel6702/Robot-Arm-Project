@@ -1,0 +1,30 @@
+class Joint
+
+instance variables
+    snr_angle: real;
+    snr_ang_vel: real;
+    last_time: real;
+
+values
+    -- Constants
+
+operations
+    public Joint: real ==> Joint
+    Joint(ang) == (
+        snr_angle := ang;
+        snr_ang_vel := 0.0;
+        last_time := 0.0;
+    );
+
+    public Get_Angle: () ==> real
+    Get_Angle() == duration(5E8) return snr_angle;
+
+    public Get_Ang_Vel: () ==> real
+    Get_Ang_Vel() == duration(5E8) return snr_ang_vel;
+
+    public Step() == (
+        snr_angle := MySystem`robot_arm.Get_Angle();
+        snr_ang_vel := MySystem`robot_arm.Get_Ang_Vel();
+    );
+
+end Joint
