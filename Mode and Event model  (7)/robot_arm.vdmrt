@@ -1,0 +1,91 @@
+class Robot_Arm
+
+instance variables
+    public env_angle: real;     -- current angle
+    public env_time: real;      -- current time
+    public env_ang_vel: real;   -- angular velocity
+    public env_ang_acc: real;   -- angular acceleration
+    public last_time: real := 0; -- last time step
+    public events: seq of Event;
+
+values
+    R: real = 1;            -- Radius/length
+    public M1: real = -10;       -- Angle limit 1  
+    public M2: real = 100;       -- Angle limit 2
+    public N1: real = 50;         -- Safe Angle limit 1  
+    public N2: real = 60;        -- Safe Angle limit 2
+    public r: real = 0.8;
+    public m: real = 0.1; 
+
+types
+    public EventType = <MotorFailure> | <MotorRepair> | <MassChange> | <AngleChange> | <SensorFailure> | <SensorRepair> | <Collision> | <PowerFluctuation> ;
+    public Event = EventType * real * real;
+
+operations
+    public Robot_Arm: real ==> Robot_Arm
+    Robot_Arm(start_angle) == (
+        env_angle := start_angle;
+        env_time := 0;
+        env_ang_vel := 0;
+        env_ang_acc := 0;
+        last_time := 0;
+        events := [];
+    );
+
+    public Add_Event: Event ==> ()
+    Add_Event(Event) == (
+        events := events ^ [Event];
+    );
+
+    public HandleEvents: () ==> ()
+    HandleEvents() == (
+        if len events > 0 then (
+            dcl event: Event := hd events;
+
+            events := tl events;
+            if event[0] == <MotorFailure> then (
+                MySystem`motor.failure();
+            );
+        );
+    );
+
+    public Get_Angle: () ==> real
+    Get_Angle() == duration(1E8) return env_angle;
+
+    public Get_Ang_Vel: () ==> real
+    Get_Ang_Vel() == duration(1E8) return env_ang_vel;
+
+    public Get_Ang_Acc: () ==> real
+    Get_Ang_Acc() == duration(1E8) return env_ang_acc;
+
+    public Set_Angle: real ==> ()
+    Set_Angle(angle) == duration(5E8) env_angle := angle;
+
+    public Set_Ang_Vel: real ==> ()
+    Set_Ang_Vel(vel) == duration(5E8) env_ang_vel := vel;
+
+    public Get_N1: () ==> real
+    Get_N1() == duration(1E8) return N1;
+
+    public Get_N2: () ==> real
+    Get_N2() == duration(1E8) return N2;
+
+    public Adjust_Angle: real ==> ()
+    Adjust_Angle(angle) == duration(5E8) env_angle := env_angle + angle;
+
+    public Get_Length: () ==> real
+    Get_Length() == duration(1E8) return r;
+
+    public Get_Mass: () ==> real
+    Get_Mass() == duration(1E8) return m;
+
+    public Get_G: () ==> real
+    Get_G() == duration(1E8) return 9.81;
+
+    public Get_I: () ==> real
+    Get_I() == duration(1E8) return 1;
+
+    public Get_friction: () ==> real
+    Get_friction() == duration(1E8) return 0.1;
+
+end Robot_Arm

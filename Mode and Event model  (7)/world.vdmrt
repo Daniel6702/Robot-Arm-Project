@@ -51,10 +51,9 @@ operations
         MySystem`controller.Set_Motor_State(<On>);
         MySystem`controller.Set_Target_Angle(35);
 
-        while (abs(MySystem`controller.Get_Last_Error()) > 0.2) do (
+        while (abs(MySystem`controller.Get_Last_Error()) > 0.15) do (
             UpdateTimeStamp();
-            MySystem`controller.MonitorCurrentAngle();
-            MySystem`controller.MonitorCurrentAngVel();
+            MySystem`controller.MonitorCurrentState();
             MySystem`controller.MoveTowardsTargetAngle();
             MySystem`motor.Step();
             MySystem`joint.Step();
@@ -82,8 +81,7 @@ operations
                 MySystem`controller.Set_Target_Angle(-35); -- Opposite direction to test responsiveness
             );
 
-            MySystem`controller.MonitorCurrentAngle();
-            MySystem`controller.MonitorCurrentAngVel();
+            MySystem`controller.MonitorCurrentState();
             MySystem`controller.MoveTowardsTargetAngle();
             MySystem`motor.Step();
             MySystem`joint.Step();

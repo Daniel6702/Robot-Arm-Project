@@ -5,9 +5,10 @@ instance variables
     last_time: real;
     motor_torque: real;
     math : MATH := new MATH();
+    final_sim_time: real := 0;
 
 values
-    MAX_TORQUE : real = 10;
+    MAX_TORQUE : real = 100;
     
 operations
     public Motor: () ==> Motor
@@ -77,11 +78,18 @@ operations
         angle_step := new_angular_vel * delta * state_val;
         MySystem`robot_arm.Adjust_Angle(angle_step);
         last_time := t;
-    )
+    );
 
---thread
+    public isFinished: () ==> ()
+    isFinished() == skip;
+
+    public SetFinalSimTime: real ==> ()
+    SetFinalSimTime(time_) == final_sim_time := time_;
 
 --sync
-    
+--    per isFinished => (time > final_sim_time);
+
+thread
+    periodic(1E8,0,0,0)(Step);
 
 end Motor
