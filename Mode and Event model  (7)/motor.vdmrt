@@ -22,6 +22,20 @@ operations
     failure() == (
         motor_state := <Off>;
         motor_torque := 0;
+        MySystem`controller.SetOperationMode(<Degraded>);
+    );
+
+    public collision: () ==> ()
+    collision() == (
+        motor_state := <Off>;
+        motor_torque := 0;
+        MySystem`controller.SetOperationMode(<Emergency>);
+    );
+
+    public repair: () ==> ()
+    repair() == (
+        motor_state := <On>;
+        MySystem`controller.SetOperationMode(<Normal>);
     );
 
     public SetMotorState: (<On> | <Off>) ==> ()

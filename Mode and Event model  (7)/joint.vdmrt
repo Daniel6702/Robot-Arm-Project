@@ -20,6 +20,20 @@ operations
     public Get_Ang_Vel: () ==> real
     Get_Ang_Vel() == duration(5E8) return snr_ang_vel;
 
+    public failure: () ==> ()
+    failure() == (
+        snr_angle := 0.0;
+        snr_ang_vel := 0.0;
+        MySystem`controller.SetOperationMode(<Degraded>);
+    );
+
+    public repair: () ==> ()
+    repair() == (
+        snr_angle := 0.0;
+        snr_ang_vel := 0.0;
+        MySystem`controller.SetOperationMode(<Normal>);
+    );
+
     public Step() == (
         snr_angle := MySystem`robot_arm.Get_Angle();
         snr_ang_vel := MySystem`robot_arm.Get_Ang_Vel();

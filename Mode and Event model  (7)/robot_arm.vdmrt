@@ -7,6 +7,7 @@ instance variables
     public env_ang_acc: real;   -- angular acceleration
     public last_time: real := 0; -- last time step
     public events: seq of Event;
+    public m: real := 0.1; 
 
 values
     R: real = 1;            -- Radius/length
@@ -15,11 +16,10 @@ values
     public N1: real = 50;         -- Safe Angle limit 1  
     public N2: real = 60;        -- Safe Angle limit 2
     public r: real = 0.8;
-    public m: real = 0.1; 
 
 types
     public EventType = <MotorFailure> | <MotorRepair> | <MassChange> | <AngleChange> | <SensorFailure> | <SensorRepair> | <Collision> | <PowerFluctuation> ;
-    public Event = EventType * real * real;
+    public Event = (EventType * real * real);
 
 operations
     public Robot_Arm: real ==> Robot_Arm
@@ -41,10 +41,24 @@ operations
     HandleEvents() == (
         if len events > 0 then (
             dcl event: Event := hd events;
-
             events := tl events;
-            if event[0] == <MotorFailure> then (
+            if event.#1 = <MotorFailure> then (
                 MySystem`motor.failure();
+            ) else if event.#1 = <MotorRepair> then (
+                MySystem`motor.repair();
+            ) else if event.#1 = <MassChange> then (
+                m := event.#3;
+            ) else if event.#1 = <AngleChange> then (
+                env_angle := env_angle + event.#3;
+            ) else if event.#1 = <SensorFailure> then (
+                MySystem`joint.failure();
+            ) else if event.#1 = <SensorRepair> then (
+                MySystem`joint.repair();
+            ) else if event.#1 = <Collision> then (
+                MySystem`motor.collision();
+            ) else if event.#1 = <PowerFluctuation> then (
+                dcl current_torque: real := MySystem`motor.GetTorque();
+                MySystem`motor.SetTorque(current_torque * event.#3);
             );
         );
     );

@@ -40,9 +40,79 @@ operations
         str := str ^ VDMUtil`val2seq_of_char[real](round(MySystem`motor.GetTorque()));
         str := str ^ " - ";
         str := str ^ VDMUtil`val2seq_of_char[real](round(MySystem`robot_arm.env_ang_vel));
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[<On> | <Off>](MySystem`motor.GetMotorState());
+        str := str ^ " - ";
+        str := str ^ VDMUtil`val2seq_of_char[<Initialise> | <Normal> | <Degraded> | <Emergency>](MySystem`controller.GetOperationMode());
         str := str ^ "\n";
         def - = io.echo(str) in skip;
     );
+
+    --MySystem`robot_arm.Add_Event(mk_(<MotorFailure>, 0.0, 0.0));
+
+    public Scenario11 : () ==> bool
+    Scenario11() == (
+        echoHeader();
+        UpdateTimeStamp();
+        while (MySystem`controller.GetOperationMode() = <Initialise>) do (
+            MySystem`controller.Step();
+            UpdateTimeStamp();
+        );
+        return true;
+    );
+
+    public Scenario10 : () ==> bool  --PID Test Scenario
+    Scenario10() == (
+        echoHeader();
+        UpdateTimeStamp();
+        MySystem`controller.Set_Motor_State(<On>);
+        MySystem`controller.Set_Target_Angle(35);
+        UpdateTimeStamp();
+        MySystem`controller.Step();
+        UpdateTimeStamp();
+        MySystem`robot_arm.Add_Event(mk_(<MotorFailure>, 0.0, 0.0));
+        MySystem`robot_arm.HandleEvents();
+        UpdateTimeStamp();
+        MySystem`controller.Step();
+        UpdateTimeStamp();
+        MySystem`robot_arm.Add_Event(mk_(<MotorRepair>, 0.0, 0.0));
+        MySystem`robot_arm.HandleEvents();
+        UpdateTimeStamp();
+        MySystem`controller.Step();
+        UpdateTimeStamp();
+        MySystem`robot_arm.Add_Event(mk_(<Collision>, 0.0, 0.0));
+        MySystem`robot_arm.HandleEvents();
+        UpdateTimeStamp();
+
+        return true;
+    );
+
+
+    public Scenario12 : () ==> bool  --PID Test Scenario
+    Scenario12() == (
+        echoHeader();
+        UpdateTimeStamp();
+        MySystem`controller.Set_Motor_State(<On>);
+        MySystem`controller.Set_Target_Angle(35);
+        UpdateTimeStamp();
+        while (abs(MySystem`controller.Get_Last_Error()) > 0.1) do (
+            if (current_time > 50 and current_time < 53.9) then (
+                MySystem`robot_arm.Add_Event(mk_(<AngleChange>, 0.0, -20));
+            ) else if (current_time > 100 and current_time < 103.9) then (
+                MySystem`robot_arm.Add_Event(mk_(<MassChange>, 0.0, 0.3));
+            ) else if (current_time > 150 and current_time < 153.9) then (
+                MySystem`robot_arm.Add_Event(mk_(<PowerFluctuation>, 0.0, 1.1));
+            ); 
+            MySystem`robot_arm.HandleEvents();
+            MySystem`controller.Step();
+            MySystem`motor.Step();
+            MySystem`joint.Step();
+            UpdateTimeStamp();
+        );
+
+        return true;
+    );
+    
 
     public Scenario0 : () ==> bool  --PID Test Scenario
     Scenario0() == (

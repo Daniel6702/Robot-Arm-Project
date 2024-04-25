@@ -6,6 +6,7 @@ instance variables
     ctl_ang_vel: real; 
     ctl_motor_state: <On> | <Off>;
     final_sim_time: real := 0;
+    Mode: OperationMode := <Initialise>;
 
     Kp: real := 0.05;  -- Proportional gain coefficient
     Ki: real := 0.01;  -- Integral gain coefficient
@@ -17,6 +18,9 @@ values
     -- Safety limitss
     N1 : real = -10; 
     N2 : real = 120;  
+
+types
+    public OperationMode = <Initialise> | <Normal> | <Degraded> | <Emergency> ;
 
 operations
     public Robot_Arm_Controller: real * real ==> Robot_Arm_Controller
@@ -56,12 +60,29 @@ operations
 
     public EnsureRobotArmSafety: () ==> ()
     EnsureRobotArmSafety() == duration(1E8) (
-        if (ctl_angle < N1) then (
+        if (Mode = <Initialise>) then (
+            if (ctl_angle < N1) then (
+                Set_Motor_State(<Off>);
+                SetOperationMode(<Emergency>);
+            ) else if (ctl_angle > N2) then (
+                Set_Motor_State(<Off>);
+                SetOperationMode(<Emergency>);
+            ) else (
+                Set_Motor_State(<On>);
+                SetOperationMode(<Normal>);
+            );
+        ) else if (Mode = <Normal>) then (
+            if (ctl_angle < N1) then (
+                Set_Motor_State(<Off>);
+                SetOperationMode(<Emergency>);
+            ) else if (ctl_angle > N2) then (
+                Set_Motor_State(<Off>);
+                SetOperationMode(<Emergency>);
+            );
+        ) else if (Mode = <Degraded>) then (
             Set_Motor_State(<Off>);
-        ) else if (ctl_angle > N2) then (
+        ) else if (Mode = <Emergency>) then (
             Set_Motor_State(<Off>);
-        ) else (
-            Set_Motor_State(<On>);
         );
     );
 
@@ -79,6 +100,12 @@ operations
         EnsureRobotArmSafety();
     );
 
+    public SetOperationMode: OperationMode ==> ()
+    SetOperationMode(mode) == duration(1E8) Mode := mode;
+
+    public GetOperationMode: () ==> OperationMode
+    GetOperationMode() == duration(1E8) return Mode;
+    
     public isFinished: () ==> ()
     isFinished() == skip;
 
