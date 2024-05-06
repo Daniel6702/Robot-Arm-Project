@@ -8,9 +8,9 @@ instance variables
     final_sim_time: real := 0;
     Mode: OperationMode := <Initialise>;
 
-    Kp: real := 0.05;  -- Proportional gain coefficient
+    Kp: real := 0.08;  -- Proportional gain coefficient
     Ki: real := 0.01;  -- Integral gain coefficient
-    Kd: real := 0.05;  -- Derivative gain coefficient
+    Kd: real := 0.2;  -- Derivative gain coefficient
     integral: real := 0;
     last_error: real;
 

@@ -10,12 +10,12 @@
             "command": "print new World().test()"
         },
         {
-            "name": "Lens config: Debug World`Scenario11",
+            "name": "Lens config: Debug World`Scenario1",
             "type": "vdm",
             "request": "launch",
             "noDebug": false,
             "defaultName": "World",
-            "command": "p new World().Scenario11()"
+            "command": "p new World().Scenario1()"
         }
     ]
 }

@@ -50,6 +50,22 @@ operations
 
     --MySystem`robot_arm.Add_Event(mk_(<MotorFailure>, 0.0, 0.0));
 
+    public TESTSCENARIO : () ==> bool  --PID Test Scenario
+    TESTSCENARIO() == (
+        echoHeader();
+        UpdateTimeStamp();
+        MySystem`controller.Set_Motor_State(<On>);
+        MySystem`controller.Set_Target_Angle(40);
+        UpdateTimeStamp();
+        while (abs(MySystem`controller.Get_Last_Error()) > 0.1) do (
+            MySystem`controller.Step();
+            MySystem`motor.Step();
+            MySystem`joint.Step();
+            UpdateTimeStamp();
+        );
+        return true;
+    );
+
     public Scenario11 : () ==> bool
     Scenario11() == (
         echoHeader();
@@ -139,7 +155,7 @@ operations
         MySystem`controller.Set_Motor_State(<On>);
 
         -- Initial target angle
-        MySystem`controller.Set_Target_Angle(35);
+        MySystem`controller.Set_Target_Angle(20);
 
         while (true) do (
             UpdateTimeStamp();
@@ -148,11 +164,10 @@ operations
             if not reachedFirstTarget and abs(MySystem`controller.Get_Last_Error()) < 0.2 then (
                 reachedFirstTarget := true;
                 -- Change to a new target angle suddenly
-                MySystem`controller.Set_Target_Angle(-35); -- Opposite direction to test responsiveness
+                MySystem`controller.Set_Target_Angle(70); -- Opposite direction to test responsiveness
             );
 
-            MySystem`controller.MonitorCurrentState();
-            MySystem`controller.MoveTowardsTargetAngle();
+            MySystem`controller.Step();
             MySystem`motor.Step();
             MySystem`joint.Step();
 
